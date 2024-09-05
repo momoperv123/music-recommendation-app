@@ -2,8 +2,8 @@ import React from 'react';
 
 const SpotifyLogin = () => {
   const handleLogin = () => {
-    const clientId = '8d135e71b2af4b30a8c2679c4a135b5b';
-    const redirectUri = 'http://localhost:3000/callback';
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
     const scope = 'user-read-private user-read-email';
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 
