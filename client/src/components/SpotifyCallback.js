@@ -24,10 +24,8 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
       }
 
       try {
-        // Use the environment variable for the API URL
         const apiUrl = process.env.REACT_APP_API_URL;
         const response = await axios.post(`${apiUrl}/auth/spotify/token`, { code });
-
         const { access_token, refresh_token, expires_in } = response.data;
 
         if (access_token) {
