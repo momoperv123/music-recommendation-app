@@ -11,7 +11,7 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
       if (tokenInStorage) {
         console.log('Token already exists, skipping code exchange');
         setIsLoggedIn(true);
-        navigate('/'); 
+        navigate('/');
         return;
       }
 
@@ -24,7 +24,10 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
       }
 
       try {
-        const response = await axios.post('http://localhost:5000/auth/spotify/token', { code });
+        // Use the environment variable for the API URL
+        const apiUrl = process.env.REACT_APP_API_URL;
+        const response = await axios.post(`${apiUrl}/auth/spotify/token`, { code });
+
         const { access_token, refresh_token, expires_in } = response.data;
 
         if (access_token) {
@@ -41,9 +44,9 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
           const profileData = profileResponse.data;
           setAvatarUrl(profileData.images?.[0]?.url || null);
           setUserName(profileData.display_name || null);
-          setIsLoggedIn(true); 
+          setIsLoggedIn(true);
 
-          navigate('/'); 
+          navigate('/');
         } else {
           console.error('No access token received from Spotify.');
         }
@@ -67,9 +70,11 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
     fetchTokenAndProfile();
   }, [navigate, setIsLoggedIn, setAvatarUrl, setUserName]);
 
-  return <div className="w-full col-span-full flex justify-center items-center mt-10">
-  <p className="text-center text-xl font-semibold text-gray-400">Logging In With Spotify...</p>
-</div>
+  return (
+    <div className="w-full col-span-full flex justify-center items-center mt-10">
+      <p className="text-center text-xl font-semibold text-gray-400">Logging In With Spotify...</p>
+    </div>
+  );
 };
 
 export default SpotifyCallback;
