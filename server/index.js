@@ -24,7 +24,7 @@ app.post('/auth/spotify/token', async (req, res) => {
     const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: 'http://localhost:3000/callback',
+      redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
       client_id: process.env.SPOTIFY_CLIENT_ID,
       client_secret: process.env.SPOTIFY_CLIENT_SECRET
     }), {
