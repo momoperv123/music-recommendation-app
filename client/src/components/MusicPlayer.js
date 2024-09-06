@@ -80,7 +80,8 @@ const MusicPlayer = ({ trackUrl, isPlaying, stop, songTitle, artistName }) => {
         value={progress}
         max="100"
         onChange={handleSeek}
-        style={{ width: '100%' }}
+        className="music-slider"
+        style={{ width: '100%', height: '10px', cursor: 'pointer' }}  // Thicker slider and cursor pointer
       />
       <div className="time-display">
         <span>{Math.floor(progress / 100 * duration / 60)}:{Math.floor(progress / 100 * duration % 60).toString().padStart(2, '0')}</span>

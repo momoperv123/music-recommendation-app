@@ -52,7 +52,6 @@ function App() {
             setUserName={setUserName}
           />}
         />
-        {/* Add other routes here */}
       </Routes>
     </Router>
   );

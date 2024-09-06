@@ -41,21 +41,28 @@ const SearchBar = ({ onSelect }) => {
           }
         });
 
-        const artistIds = response.data.artists.items.map(artist => artist.id);
-        const artistTracksPromises = artistIds.map(id =>
-          axios.get(`https://api.spotify.com/v1/artists/${id}/top-tracks`, {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { market: 'US' }
-          })
-        );
+        console.log("Spotify API Response:", response);
 
-        const artistTracksResponses = await Promise.all(artistTracksPromises);
-        const validArtists = response.data.artists.items.filter((index) => {
-          return artistTracksResponses[index].data.tracks.some(track => track.preview_url);
-        });
+        if (response && response.data) {
+          const artistIds = response.data.artists?.items.map(artist => artist.id) || [];
+          const trackResults = response.data.tracks?.items.filter(track => track.preview_url) || [];
 
-        const trackResults = response.data.tracks.items.filter(track => track.preview_url);
-        setSearchResults([...trackResults, ...validArtists]);
+          const artistTracksPromises = artistIds.map(id =>
+            axios.get(`https://api.spotify.com/v1/artists/${id}/top-tracks`, {
+              headers: { Authorization: `Bearer ${token}` },
+              params: { market: 'US' }
+            })
+          );
+
+          const artistTracksResponses = await Promise.all(artistTracksPromises);
+          const validArtists = response.data.artists?.items.filter((artist, index) => {
+            return artistTracksResponses[index]?.data.tracks.some(track => track.preview_url);
+          }) || [];
+
+          setSearchResults([...trackResults, ...validArtists]);
+        } else {
+          console.error("Spotify API returned an unexpected response:", response);
+        }
       } catch (error) {
         console.error('Error searching Spotify:', error.response ? error.response.data : error.message);
       }
@@ -80,8 +87,12 @@ const SearchBar = ({ onSelect }) => {
           params: { market: 'US' }
         });
 
-        const artistTracks = response.data.tracks.filter(track => track.preview_url);
-        onSelect({ type: 'artist', tracks: artistTracks, artistName: result.name });
+        if (response && response.data) {
+          const artistTracks = response.data.tracks.filter(track => track.preview_url);
+          onSelect({ type: 'artist', tracks: artistTracks, artistName: result.name });
+        } else {
+          console.error("Failed to fetch artist's top tracks:", response);
+        }
       } catch (error) {
         console.error('Error fetching artist top tracks:', error.response ? error.response.data : error.message);
       }
