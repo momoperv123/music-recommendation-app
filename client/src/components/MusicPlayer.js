@@ -66,6 +66,10 @@ const MusicPlayer = ({ trackUrl, isPlaying, stop, songTitle, artistName }) => {
     const newTime = (e.target.value / 100) * audio.duration;
     audio.currentTime = newTime;
     setProgress(e.target.value);
+
+    if (!isPlaying) {
+      audio.pause();
+    }
   };
 
   const handleLyricsClick = (e) => {

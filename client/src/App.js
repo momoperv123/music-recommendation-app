@@ -28,7 +28,7 @@ function App() {
         if (error.response && error.response.status === 401) {
           localStorage.removeItem('spotifyToken');
           setIsLoggedIn(false);
-          window.location.href = '/login';
+          window.location.href = '/';
         }
       });
     }

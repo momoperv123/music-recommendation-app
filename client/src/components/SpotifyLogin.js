@@ -7,6 +7,10 @@ const SpotifyLogin = () => {
     const scope = 'user-read-private user-read-email';
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 
+    localStorage.removeItem('spotifyToken');
+    localStorage.removeItem('spotifyRefreshToken');
+    localStorage.removeItem('spotifyTokenExpiration');
+
     window.location.href = authUrl;
   };
 
