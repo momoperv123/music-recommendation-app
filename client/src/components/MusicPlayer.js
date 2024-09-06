@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const fetchLyrics = async (songTitle, artistName) => {
   try {
-    const response = await axios.get('http://localhost:5000/api/lyrics', {
+    const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/lyrics`, {
       params: { song: songTitle, artist: artistName }
     });
 
