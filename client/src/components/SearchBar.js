@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { spotifyApi } from '../spotifyClient';
+import { useToast } from './ToastProvider';
 
 const SearchBar = ({ onSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const { notifyError } = useToast();
   const searchBarRef = useRef(null);
+  const debounceRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -20,55 +23,57 @@ const SearchBar = ({ onSelect }) => {
     };
   }, []);
 
-  const handleSearchChange = async (e) => {
+  const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
 
-    if (query.length > 2) {
-      try {
-        const token = localStorage.getItem('spotifyToken');
-        if (!token) {
-          console.error('No Spotify token found in localStorage.');
-          return;
-        }
-
-        const response = await axios.get('https://api.spotify.com/v1/search', {
-          headers: { Authorization: `Bearer ${token}` },
-          params: {
-            q: query,
-            type: 'track,artist',
-            limit: 10,
-          }
-        });
-
-        console.log("Spotify API Response:", response);
-
-        if (response && response.data) {
-          const artistIds = response.data.artists?.items.map(artist => artist.id) || [];
-          const trackResults = response.data.tracks?.items.filter(track => track.preview_url) || [];
-
-          const artistTracksPromises = artistIds.map(id =>
-            axios.get(`https://api.spotify.com/v1/artists/${id}/top-tracks`, {
-              headers: { Authorization: `Bearer ${token}` },
-              params: { market: 'US' }
-            })
-          );
-
-          const artistTracksResponses = await Promise.all(artistTracksPromises);
-          const validArtists = response.data.artists?.items.filter((artist, index) => {
-            return artistTracksResponses[index]?.data.tracks.some(track => track.preview_url);
-          }) || [];
-
-          setSearchResults([...trackResults, ...validArtists]);
-        } else {
-          console.error("Spotify API returned an unexpected response:", response);
-        }
-      } catch (error) {
-        console.error('Error searching Spotify:', error.response ? error.response.data : error.message);
-      }
-    } else {
-      setSearchResults([]);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
     }
+
+    debounceRef.current = setTimeout(async () => {
+      if (query.length > 2) {
+        try {
+          const token = localStorage.getItem('spotifyToken');
+          if (!token) {
+            console.error('No Spotify token found in localStorage.');
+            return;
+          }
+
+          const response = await spotifyApi.get('/v1/search', {
+            params: {
+              q: query,
+              type: 'track,artist',
+              limit: 10,
+            }
+          });
+
+          if (response && response.data) {
+            const artistIds = response.data.artists?.items.map(artist => artist.id) || [];
+            const trackResults = response.data.tracks?.items.filter(track => track.preview_url) || [];
+
+            const artistTracksPromises = artistIds.map(id =>
+              spotifyApi.get(`/v1/artists/${id}/top-tracks`, {
+                params: { market: 'US' }
+              })
+            );
+
+            const artistTracksResponses = await Promise.all(artistTracksPromises);
+            const validArtists = response.data.artists?.items.filter((artist, index) => {
+              return artistTracksResponses[index]?.data.tracks.some(track => track.preview_url);
+            }) || [];
+
+            setSearchResults([...trackResults, ...validArtists]);
+          } else {
+            notifyError('Unexpected Spotify response while searching');
+          }
+        } catch (error) {
+          notifyError('Error searching Spotify');
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
   };
 
   const handleSelect = async (result) => {
@@ -82,8 +87,7 @@ const SearchBar = ({ onSelect }) => {
           return;
         }
 
-        const response = await axios.get(`https://api.spotify.com/v1/artists/${result.id}/top-tracks`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await spotifyApi.get(`/v1/artists/${result.id}/top-tracks`, {
           params: { market: 'US' }
         });
 

@@ -18,7 +18,9 @@ app.get('/', (req, res) => {
 app.post('/auth/spotify/token', async (req, res) => {
   const { code } = req.body;
 
-  console.log('Received a POST request at /auth/spotify/token with code:', code);
+  if (!code) {
+    return res.status(400).json({ error: 'Missing authorization code' });
+  }
 
   try {
     const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
@@ -33,7 +35,6 @@ app.post('/auth/spotify/token', async (req, res) => {
       }
     });
 
-    console.log('Spotify access token response:', response.data);
     res.json(response.data);
   } catch (error) {
     console.error('Error fetching access token from Spotify:', error.response ? error.response.data : error.message);
@@ -41,11 +42,39 @@ app.post('/auth/spotify/token', async (req, res) => {
   }
 });
 
+app.post('/auth/spotify/refresh', async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) {
+    return res.status(400).json({ error: 'Missing refresh_token' });
+  }
+
+  try {
+    const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token,
+      client_id: process.env.SPOTIFY_CLIENT_ID,
+      client_secret: process.env.SPOTIFY_CLIENT_SECRET
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error refreshing access token from Spotify:', error.response ? error.response.data : error.message);
+    res.status(500).send('Token refresh failed');
+  }
+});
+
 app.get('/api/lyrics', async (req, res) => {
   const { song, artist } = req.query;
 
   try {
-    const token = process.env.GENIUS_API_TOKEN;
+    const token = process.env.GENIUS_API_KEY || process.env.GENIUS_API_TOKEN;
+    if (!token) {
+      return res.status(500).json({ error: 'Genius API key not configured' });
+    }
     const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(song)} ${encodeURIComponent(artist)}`;
     
     const response = await axios.get(searchUrl, {

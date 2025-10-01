@@ -32,7 +32,11 @@ const LandingPage = () => {
   };
 
   const handleSelectTrackOrArtist = (result) => {
+    if (!result) return;
     if (result.type === 'track') {
+      if (!result.preview_url) {
+        return;
+      }
       if (result.id === currentTrackId) {
         setCurrentTrackId(null);
       } else {
@@ -94,7 +98,7 @@ const LandingPage = () => {
               className={`grid-item ${currentTrackId === selectedTrack.id ? 'playing' : ''}`}
               onClick={() => handleTrackClick(selectedTrack)}
             >
-              <img src={selectedTrack.album.images[0].url} alt={selectedTrack.name} />
+              <img src={selectedTrack.album?.images?.[0]?.url || '/images/logo.png'} alt={selectedTrack.name} />
               <p className="text-lg font-semibold text-white">{selectedTrack.name}</p>
               <p className="text-sm text-white">{selectedTrack.artists[0].name}</p>
               <MusicPlayer 
@@ -126,7 +130,7 @@ const LandingPage = () => {
                 className={`grid-item ${currentTrackId === track.id ? 'playing' : ''}`}
                 onClick={() => handleTrackClick(track)} 
               >
-                <img src={track.album.images[0].url} alt={track.name} />
+                <img src={track.album?.images?.[0]?.url || '/images/logo.png'} alt={track.name} />
                 <p className="text-lg font-semibold text-white">{track.name}</p>
                 <p className="text-sm text-white">{track.artists[0].name}</p>
                 <MusicPlayer

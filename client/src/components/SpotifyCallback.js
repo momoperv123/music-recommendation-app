@@ -1,15 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { spotifyApi } from '../spotifyClient';
+import { useToast } from './ToastProvider';
 
 const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
   const navigate = useNavigate();
+  const { notifyError } = useToast();
+  const hasExchangedRef = useRef(false);
 
   useEffect(() => {
     const fetchTokenAndProfile = async () => {
+      if (hasExchangedRef.current) {
+        return;
+      }
+
+      hasExchangedRef.current = true;
+
       const tokenInStorage = localStorage.getItem('spotifyToken');
       if (tokenInStorage) {
-        console.log('Token already exists, skipping code exchange');
         setIsLoggedIn(true);
         navigate('/');
         return;
@@ -19,12 +28,17 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
       const code = urlParams.get('code');
 
       if (!code) {
-        console.error('No authorization code found in the URL.');
+        notifyError('No authorization code found in the URL');
         return;
       }
 
       try {
         const apiUrl = process.env.REACT_APP_API_URL;
+        if (!apiUrl) {
+          notifyError('Missing API URL configuration');
+          return;
+        }
+
         const response = await axios.post(`${apiUrl}/auth/spotify/token`, { code });
         const { access_token, refresh_token, expires_in } = response.data;
 
@@ -35,9 +49,7 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
           const expirationTime = new Date().getTime() + expires_in * 1000;
           localStorage.setItem('spotifyTokenExpiration', expirationTime);
 
-          const profileResponse = await axios.get('https://api.spotify.com/v1/me', {
-            headers: { Authorization: `Bearer ${access_token}` }
-          });
+          const profileResponse = await spotifyApi.get('/v1/me');
 
           const profileData = profileResponse.data;
           setAvatarUrl(profileData.images?.[0]?.url || null);
@@ -46,19 +58,18 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
 
           navigate('/');
         } else {
-          console.error('No access token received from Spotify.');
+          notifyError('No access token received from Spotify');
         }
       } catch (error) {
         if (error.response && error.response.status === 429) {
           const retryAfter = error.response.headers['retry-after'];
-          console.warn(`Rate limit exceeded. Retrying in ${retryAfter} seconds...`);
-
+          notifyError('Rate limited by Spotify. Retrying shortly...');
           setTimeout(fetchTokenAndProfile, retryAfter * 1000);
         } else {
-          console.error('Error during token exchange or profile fetch:', error.response ? error.response.data : error.message);
+          notifyError('Error during Spotify login');
 
           if (error.response && error.response.data.error === 'invalid_grant') {
-            console.error('Authorization code has expired or is invalid.');
+            notifyError('Authorization code expired or invalid');
             window.location.href = '/';
           }
         }
@@ -66,7 +77,7 @@ const SpotifyCallback = ({ setIsLoggedIn, setAvatarUrl, setUserName }) => {
     };
 
     fetchTokenAndProfile();
-  }, [navigate, setIsLoggedIn, setAvatarUrl, setUserName]);
+  }, [navigate, setIsLoggedIn, setAvatarUrl, setUserName, notifyError]);
 
   return (
     <div className="w-full col-span-full flex justify-center items-center mt-10">

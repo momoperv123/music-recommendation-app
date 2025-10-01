@@ -33,7 +33,7 @@ const Header = ({ avatarUrl, userName, isLoggedIn }) => {
   };
 
   const handleLogoClick = () => {
-    window.location.href = '/';
+    window.location.assign('/');
   };
 
   const toggleDarkMode = () => {
@@ -66,7 +66,6 @@ const Header = ({ avatarUrl, userName, isLoggedIn }) => {
             <BsThreeDotsVertical className="text-white text-2xl" />
           </button>
 
-          {/* User Profile */}
           <div className="hidden md:flex items-center">
             <button
               className="flex items-center focus:outline-none"
@@ -86,7 +85,6 @@ const Header = ({ avatarUrl, userName, isLoggedIn }) => {
             </button>
           </div>
 
-          {/* Dropdown Menu */}
           {dropdownVisible && (
             <div
               ref={dropdownRef}

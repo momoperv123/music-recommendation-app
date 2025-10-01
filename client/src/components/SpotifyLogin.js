@@ -1,10 +1,17 @@
 import React from 'react';
+import { useToast } from './ToastProvider';
 
 const SpotifyLogin = () => {
+  const { notifyError } = useToast();
+
   const handleLogin = () => {
     const clientId = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
     const redirectUri = process.env.REACT_APP_SPOTIFY_REDIRECT_URI;
     const scope = 'user-read-private user-read-email';
+    if (!clientId || !redirectUri) {
+      notifyError('Missing Spotify env configuration');
+      return;
+    }
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 
     localStorage.removeItem('spotifyToken');

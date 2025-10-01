@@ -28,11 +28,18 @@ const MusicPlayer = ({ trackUrl, isPlaying, stop, songTitle, artistName }) => {
     const audio = audioRef.current;
 
     const updateProgress = () => {
+      if (!audio.duration || Number.isNaN(audio.duration)) {
+        return;
+      }
       setProgress((audio.currentTime / audio.duration) * 100);
     };
 
     const setAudioDuration = () => {
-      setDuration(audio.duration);
+      if (!audio.duration || Number.isNaN(audio.duration)) {
+        setDuration(0);
+      } else {
+        setDuration(audio.duration);
+      }
     };
 
     audio.addEventListener('timeupdate', updateProgress);
@@ -85,7 +92,7 @@ const MusicPlayer = ({ trackUrl, isPlaying, stop, songTitle, artistName }) => {
         max="100"
         onChange={handleSeek}
         className="music-slider"
-        style={{ width: '100%', height: '10px', cursor: 'pointer' }}  // Thicker slider and cursor pointer
+        style={{ width: '100%', height: '10px', cursor: 'pointer' }}
       />
       <div className="time-display">
         <span>{Math.floor(progress / 100 * duration / 60)}:{Math.floor(progress / 100 * duration % 60).toString().padStart(2, '0')}</span>

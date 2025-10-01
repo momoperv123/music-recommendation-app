@@ -30,19 +30,28 @@ To get started with the Rhythm Music App, follow these steps:
 
 3. **Set up environment variables**:
    - Create a `.env` file in the root directory.
-   - Add your Spotify and Genius API credentials:
+   - Add your Spotify and Genius API credentials (server) and client config:
      ```plaintext
-     REACT_APP_SPOTIFY_CLIENT_ID=your_spotify_client_id
-     REACT_APP_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+     # server/.env
+     PORT=5000
+     SPOTIFY_CLIENT_ID=your_spotify_client_id
+     SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+     SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
      GENIUS_API_KEY=your_genius_api_key
+     ```
+     ```plaintext
+     # client/.env
+     REACT_APP_SPOTIFY_CLIENT_ID=your_spotify_client_id
+     REACT_APP_SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
+     REACT_APP_API_URL=http://localhost:5000
      ```
 
 4. **Start the server**:
    - The backend server is powered by Express.js and runs on port `5000` by default. You can change the port by setting the `PORT` environment variable.
    - Start the server with the following command:
-     ```bash
-     npm run server
-     ```
+   ```bash
+   npm run server
+   ```
 
 5. **Start the development server**:
    ```bash
@@ -58,6 +67,11 @@ To get started with the Rhythm Music App, follow these steps:
 3. **Play music**: Click on a track to start playing it. You can control playback using the built-in music player.
 4. **Explore artists**: Click on an artist to view their top tracks.
 5. **View Lyrics**: When a track is playing, click the "View Lyrics" button to see the lyrics fetched from the Genius API.
+
+## Notes
+
+- Access tokens are auto-refreshed in the client when expired via `/auth/spotify/refresh` and retried automatically.
+- Build outputs under `client/build` are ignored by git.
 
 ## Technologies Used
 

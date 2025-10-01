@@ -1,11 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useRef } from 'react';
+import { spotifyApi } from '../spotifyClient';
+import { useToast } from './ToastProvider';
 import MusicPlayer from './MusicPlayer';
 
 const RecommendationCarousel = ({ selectedMood, currentTrackId, setCurrentTrackId, genreSeed }) => {
   const [recommendations, setRecommendations] = useState([]);
+  const availableGenresRef = useRef(null);
+  const { notifyError } = useToast();
 
   useEffect(() => {
+    const ensureAvailableGenres = async () => {
+      if (availableGenresRef.current) return availableGenresRef.current;
+      try {
+        const seedsResp = await spotifyApi.get('/v1/recommendations/available-genre-seeds');
+        const list = Array.isArray(seedsResp.data?.genres) ? seedsResp.data.genres : [];
+        availableGenresRef.current = new Set(list);
+        return availableGenresRef.current;
+      } catch (e) {
+        availableGenresRef.current = new Set(['pop']);
+        return availableGenresRef.current;
+      }
+    };
+
+    const tryByGenre = async (genre) => {
+      const response = await spotifyApi.get('/v1/recommendations', {
+        params: {
+          limit: 30,
+          seed_genres: genre,
+          market: 'US'
+        }
+      });
+      const tracks = Array.isArray(response.data?.tracks) ? response.data.tracks : [];
+      return tracks.filter(track => track.preview_url);
+    };
+
+    const tryBySeedTracks = async (seedTrackIds) => {
+      const response = await spotifyApi.get('/v1/recommendations', {
+        params: {
+          limit: 30,
+          seed_tracks: seedTrackIds.slice(0, 5).join(','),
+          market: 'US'
+        }
+      });
+      const tracks = Array.isArray(response.data?.tracks) ? response.data.tracks : [];
+      return tracks.filter(track => track.preview_url);
+    };
+
     const fetchRecommendations = async () => {
       try {
         const token = localStorage.getItem('spotifyToken');
@@ -24,21 +64,31 @@ const RecommendationCarousel = ({ selectedMood, currentTrackId, setCurrentTrackI
           workout: 'rock',
         };
 
-        const genre = genreSeed || moodToGenreMap[selectedMood] || 'pop';
+        const desiredGenre = genreSeed || moodToGenreMap[selectedMood] || 'pop';
+        const available = await ensureAvailableGenres();
+        const genre = available.has(desiredGenre) ? desiredGenre : 'pop';
 
-        const response = await axios.get('https://api.spotify.com/v1/recommendations', {
-          headers: { Authorization: `Bearer ${token}` },
-          params: {
-            limit: 30,
-            seed_genres: genre,
-          }
-        });
-
-        const filteredTracks = response.data.tracks.filter(track => track.preview_url);
-        console.log(`Filtered ${filteredTracks.length} tracks for genre "${genre}".`);
+        let filteredTracks = [];
+        try {
+          filteredTracks = await tryByGenre(genre);
+        } catch (e) {
+          // ignore and try fallback below
+        }
 
         if (filteredTracks.length === 0) {
-          console.warn('No tracks with a preview_url found for the selected genre.');
+          try {
+            const searchResp = await spotifyApi.get('/v1/search', {
+              params: { q: genre, type: 'track', limit: 5, market: 'US' }
+            });
+            const seedTrackIds = (searchResp.data?.tracks?.items || [])
+              .filter(t => t && t.id)
+              .map(t => t.id);
+            if (seedTrackIds.length > 0) {
+              filteredTracks = await tryBySeedTracks(seedTrackIds);
+            }
+          } catch (e) {
+            // swallow; will notify below
+          }
         }
 
         setRecommendations(filteredTracks);
@@ -48,13 +98,13 @@ const RecommendationCarousel = ({ selectedMood, currentTrackId, setCurrentTrackI
           localStorage.removeItem('spotifyToken');
           window.location.href = '/';
         } else {
-          console.error('Error fetching recommendations:', error.response ? error.response.data : error.message);
+          notifyError('Error fetching recommendations');
         }
       }
     };
 
     fetchRecommendations();
-  }, [selectedMood, genreSeed]);
+  }, [selectedMood, genreSeed, notifyError]);
 
   const handleCardClick = (trackId) => {
     if (currentTrackId === trackId) {
@@ -73,7 +123,7 @@ const RecommendationCarousel = ({ selectedMood, currentTrackId, setCurrentTrackI
             className={`grid-item ${currentTrackId === track.id ? 'playing' : ''}`}
             onClick={() => handleCardClick(track.id)}
           >
-            <img src={track.album.images[0].url} alt={track.name} />
+            <img src={track.album?.images?.[0]?.url || '/images/logo.png'} alt={track.name} />
             <p className="text-lg font-semibold text-white">{track.name}</p>
             <p className="text-sm text-white">{track.artists[0].name}</p>
             <MusicPlayer

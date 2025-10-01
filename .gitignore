@@ -9,12 +9,16 @@ node_modules/
 
 # production
 /build
+client/build/
+server/build/
 
 # misc
 .DS_Store
 
 # Environment variables
 .env
+client/.env
+server/.env
 .env.local
 .env.development.local
 .env.test.local

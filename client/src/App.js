@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
+import { ToastProvider } from './components/ToastProvider';
 import LandingPage from './pages/LandingPage';
 import SpotifyCallback from './components/SpotifyCallback';
-import NotLoggedInPage from './pages/NotLoggedInPage'; // Ensure this path is correct
+import NotLoggedInPage from './pages/NotLoggedInPage';
 import axios from 'axios';
 
 function App() {
@@ -35,25 +36,27 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <Header isLoggedIn={isLoggedIn} userName={userName} avatarUrl={avatarUrl} />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            isLoggedIn ? <LandingPage /> : <NotLoggedInPage />
-          }
-        />
-        <Route
-          path="/callback"
-          element={<SpotifyCallback
-            setIsLoggedIn={setIsLoggedIn}
-            setAvatarUrl={setAvatarUrl}
-            setUserName={setUserName}
-          />}
-        />
-      </Routes>
-    </Router>
+    <ToastProvider>
+      <Router>
+        <Header isLoggedIn={isLoggedIn} userName={userName} avatarUrl={avatarUrl} />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              isLoggedIn ? <LandingPage /> : <NotLoggedInPage />
+            }
+          />
+          <Route
+            path="/callback"
+            element={<SpotifyCallback
+              setIsLoggedIn={setIsLoggedIn}
+              setAvatarUrl={setAvatarUrl}
+              setUserName={setUserName}
+            />}
+          />
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 

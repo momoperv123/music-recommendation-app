@@ -2,7 +2,6 @@ import React from 'react';
 import SpotifyLogin from '../components/SpotifyLogin'; 
 
 const NotLoggedInPage = () => {
-  console.log('NotLoggedInPage is rendering');
 
   return (
     <div className="not-logged-in-page h-screen bg-gray-100 flex items-center justify-center relative overflow-hidden">
